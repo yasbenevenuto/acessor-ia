@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ambiente virtual
+venv/
+.venv/
+
+# Variáveis de ambiente / segredos
+.env
+
+# Editor / ferramentas
+.cline/
+
+# Vetorstore / dados gerados (se for o caso — ajuste se quiser versionar)
+# chroma_db/
+
+# Credenciais do Google (OAuth)
+secrets/
+*.keys.json
