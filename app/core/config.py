@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+TYPESAFE_API_KEY = os.getenv("TYPESAFE_API_KEY")
+
 # BASE_DIR aponta para migracao_fastAPI/. Montado a partir da localização
 # do próprio arquivo: não depende da pasta de onde você rodou o uvicorn.
 BASE_DIR     = Path(__file__).resolve().parent.parent.parent
@@ -51,4 +53,4 @@ def validar_config() -> list[str]:
             credenciais = BASE_DIR / credenciais
         if not credenciais.exists():
             problemas.append(f"Credenciais do Google Calendar não encontradas em: {credenciais}")
-    return problemas
+    return problemas

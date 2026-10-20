@@ -11,6 +11,7 @@ from app.tools.calendar_mcp import CalendarIndisponivel
 from app.domain.memory import salvar_mensagem
 from app.domain.observabilidade import abrir_turno, fechar_turno, status_do_estado
 from app.tools import financeiro
+from app.juiz import no_juiz
 
 
 # ==============================================================================
@@ -227,6 +228,7 @@ grafo.add_node("agenda",            no_agenda)
 grafo.add_node("faq",               no_faq)
 grafo.add_node("orquestrador",      no_orquestrador)
 grafo.add_node("guardrail_saida",   no_guardrail_saida)
+grafo.add_node("juiz",              no_juiz)
 
 grafo.set_entry_point("guardrail_entrada")
 
@@ -244,9 +246,10 @@ grafo.add_conditional_edges(
 
 grafo.add_edge("financeiro",      "orquestrador")
 grafo.add_edge("agenda",          "orquestrador")
-grafo.add_edge("faq",             "guardrail_saida")   # bypassa o orquestrador
+grafo.add_edge("faq",             "juiz")              # bypassa o orquestrador e o guardrail de saída
 grafo.add_edge("orquestrador",    "guardrail_saida")
-grafo.add_edge("guardrail_saida", END)
+grafo.add_edge("guardrail_saida", "juiz")
+grafo.add_edge("juiz",            END)
 
 # Memória centralizada no grafo — persiste o Estado inteiro entre turns
 memory = MemorySaver()
@@ -259,7 +262,7 @@ fluxo_agentes = grafo.compile(checkpointer=memory)
 def executar_fluxo_assessor(pergunta_usuario: str, session_id: str, user_id: str = "usuario_teste") -> dict:
     """
     Executa o grafo completo (guardrail -> roteador -> especialista -> orquestrador
-    -> guardrail de saida) para uma pergunta do usuario.
+    -> guardrail de saida -> juiz) para uma pergunta do usuario.
 
     Retorna:
         {"resposta": str, "agentes_chamados": list[str]}
