@@ -1,7 +1,7 @@
 """
 Verificações de segurança e compliance do assessor financeiro.
 
-ENTRADA  → anonimizar → checar injeção → checar dados internos → classificar (LLM)
+ENTRADA  → anonimizar → checar injeção → checar dados internos → checar opinião enviesada → classificar (LLM)
 SAÍDA    → redigir PII → desanonimizar → revisar compliance (LLM)
 """
 import re
@@ -77,6 +77,14 @@ _PADROES_INJECAO = [
     r"desconsider[ea]\s+(suas\s+)?instru[çc][oõ]es",
 ]
 
+# Superlativos/hipérboles que o Assessor não aceita como parte do registro.
+# Só pega as formas inequívocas ("a melhor loja do mundo"); perguntas neutras
+# como "qual o melhor dia para pagar?" passam e ficam com o classificador.
+_PADRAO_OPINIAO_ENVIESADA = re.compile(
+    r"\b(melhor|pior|maior|menor|mais\s+\w+)\b[^.!?]{0,40}\b(do\s+mundo|do\s+universo|de\s+todos\s+os\s+tempos)\b",
+    re.IGNORECASE,
+)
+
 _KEYWORDS_DADOS_INTERNOS = [
     "prompt do sistema", "system prompt", "suas instruções", "your instructions",
     "variável de ambiente", "chave de api", "api key", "senha do sistema",
@@ -99,6 +107,10 @@ PERIGOSO        - instruções que causam dano físico, psicológico ou coletivo
 ILICITO         - pedido de auxílio para atividades ilegais ou fraudulentas
 POLITICO        - opiniões ou debates políticos, partidos, eleições
 INDICACAO_INVEST - recomendação direta de ativo específico para comprar/vender/manter
+OPINIAO_ENVIESADA - junto do fato, traz opinião ou superlativo categórico/exagerado sobre
+                    loja, marca, produto ou pessoa (ex.: "a melhor loja do mundo", "o pior
+                    atendimento da vida"). Pergunta neutra ("qual o melhor dia para pagar?")
+                    ou comentário simples ("almoço caro hoje") é APROVADO.
 
 Mensagem: {mensagem}
 """
@@ -108,6 +120,7 @@ _RESPOSTAS_BLOQUEIO = {
     "PERIGOSO":         ("pedido_perigoso",         "Não posso ajudar com esse tipo de solicitação."),
     "ILICITO":          ("pedido_ilicito",           "Não posso auxiliar com atividades ilegais ou irregulares."),
     "POLITICO":         ("pergunta_politica",        "Não me envolvo em temas políticos. Posso ajudar com finanças ou sua agenda."),
+    "OPINIAO_ENVIESADA": ("opiniao_enviesada",       "Não aceito opiniões enviesadas. Reenvie só o fato, sem superlativos, e eu registro."),
     "INDICACAO_INVEST": ("indicacao_investimento",   "Por regulação, não forneço indicações diretas de ativos. Posso explicar classes de investimento ou agendar uma reunião com seu assessor."),
 }
 
@@ -128,7 +141,12 @@ def guardrail_entrada(mensagem_anonimizada):
         if kw in texto_lower:
             return _bloquear("acesso_dados_internos", "Não tenho como compartilhar informações internas do sistema.")
 
-    # 3. Classificação semântica via LLM (ofensivo, perigoso, ilícito, político, indicação)
+    # 3. Opinião enviesada/superlativo (determinístico, antes de gastar LLM)
+    if _PADRAO_OPINIAO_ENVIESADA.search(mensagem_anonimizada):
+        motivo, mensagem = _RESPOSTAS_BLOQUEIO["OPINIAO_ENVIESADA"]
+        return _bloquear(motivo, mensagem)
+
+    # 4. Classificação semântica via LLM (ofensivo, perigoso, ilícito, político, indicação)
     resposta = llm_rapido.invoke(_PROMPT_CLASSIFICADOR.format(mensagem=mensagem_anonimizada)).content
 
     categoria = "APROVADO"
