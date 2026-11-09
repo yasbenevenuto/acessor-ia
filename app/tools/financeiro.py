@@ -49,7 +49,6 @@ TYPE_CATEGORIES = {
     "TAXI": "transporte", "ÔNIBUS": "transporte", "METRO": "transporte",
     "GASOLINA": "transporte", "COMBUSTIVEL": "transporte",
     "PEDAGIO": "transporte", "ESTACIONAMENTO": "transporte",
-    "UBER": "transaporte",
 
     # MORADIA
     "MORADIA": "moradia", "ALUGUEL": "moradia", "CONDOMINIO": "moradia",
