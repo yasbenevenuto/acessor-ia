@@ -30,10 +30,11 @@ jobs:
     needs: ci
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Disparar deploy no Render
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
       - name: Verificar app publicada
         run: |
           sleep 60
-          curl -fsS --retry 10 --retry-delay 15 --retry-all-errors "${{ secrets.APP_URL }}/health"
+          curl -fsS --retry 10 --retry-delay 15 --retry-all-errors "${{ secrets.APP_URL }}/health" --max-time 30

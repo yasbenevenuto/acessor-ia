@@ -37,17 +37,15 @@ def gerar_embeddings_batch(textos: list[str]) -> list[list[float]]:
 
 
 def _garantir_collection(nome: str) -> None:
-    """
-    Cria a collection no Qdrant se ela ainda não existir. Idempotente: seguro
-    chamar toda vez que o módulo é importado, igual aos create_index() do
-    Mongo em memory.py — na segunda chamada em diante, collection_exists()
-    já retorna True e a criação é pulada.
-    """
-    if not qdrant.collection_exists(nome):
-        qdrant.create_collection(
-            collection_name=nome,
-            vectors_config=models.VectorParams(size=EMBEDDING_DIM, distance=models.Distance.COSINE),
-        )
+    """(mantenha a docstring original)"""
+    try:
+        if not qdrant.collection_exists(nome):
+            qdrant.create_collection(
+                collection_name=nome,
+                vectors_config=models.VectorParams(size=EMBEDDING_DIM, distance=models.Distance.COSINE),
+            )
+    except Exception as exc:
+        print(f"[vectorstore] Qdrant indisponível ao garantir '{nome}': {exc}")
 
 
 # Roda na importação: sem isso, o primeiro upsert/query em uma collection que
