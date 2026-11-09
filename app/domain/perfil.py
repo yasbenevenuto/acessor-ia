@@ -7,11 +7,14 @@ from qdrant_client import models
 from app.core.config import MONGODB_URI
 from app.domain.vectorstore import qdrant, gerar_embedding, COLLECTION_PERFIL
 
-_mongo     = MongoClient(MONGODB_URI)
+_mongo     = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
 db         = _mongo["assessor"]
 col_perfis = db["perfis"]
 
-col_perfis.create_index("user_id", unique=True)
+try:
+    col_perfis.create_index("user_id", unique=True)
+except Exception as exc:
+    print(f"[perfil] MongoDB indisponível ao criar índice: {exc}")
 
 _NAMESPACE = uuid.UUID("12345678-1234-5678-1234-567812345678")
 
