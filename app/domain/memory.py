@@ -41,13 +41,16 @@ from app.domain.vectorstore import qdrant, gerar_embedding, COLLECTION_MEMORIA
 # CONEXÃO
 # ==============================================================================
 
-_mongo      = MongoClient(MONGODB_URI)
+_mongo      = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
 db          = _mongo["assessor"]
 col_sessoes = db["sessoes"]
 
-col_sessoes.create_index("session_id")
-col_sessoes.create_index("iniciada_em")
-col_sessoes.create_index("user_id")
+try:
+    col_sessoes.create_index("session_id")
+    col_sessoes.create_index("iniciada_em")
+    col_sessoes.create_index("user_id")
+except Exception as exc:
+    print(f"[memory] MongoDB indisponível ao criar índices: {exc}")
 
 _PROMPT_RESUMO = """\
 Você é um assistente que resume conversas de assessoria financeira e agenda.
